@@ -16,4 +16,12 @@ public class ConfigurationModel {
     private Integer driverPort;
 
 
+
+    public String getServerWSUrl(){
+        return "ws://%s:%d/ws".formatted(
+                serverUrl.replaceAll("^[a-z]+://", "")
+                        .replaceAll("/$", ""),
+                serverPort);
+    }
+
 }
