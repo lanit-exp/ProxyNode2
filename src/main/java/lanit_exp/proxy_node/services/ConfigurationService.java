@@ -16,6 +16,8 @@ import java.util.UUID;
 @Service
 public class ConfigurationService {
 
+    private ConfigurationModel configurationModel;
+
     @Value("${node.conf.fileName}")
     private String confFileName;
 
@@ -26,6 +28,11 @@ public class ConfigurationService {
             # Уникальный id ноды, используется для точной идентификации ноды при проксировании запросов
             # Генерируется автоматически при создании файла
                 node_id=%s
+
+            # Теги ноды, используемы для фильтрации всех запущенных нод.
+            # Применяется при запуске не на конкретной ноде,а на любой свободной.
+            # Теги указывать через запятую (например: flanium,regress,chrome). (параметр опциональный)
+                node_tags=
 
             # Адрес сервера Proxy Hub (указать только ip или адрес хоста: 123.456.7.8 или proxyhub.lanit.ru)            
                 server_url=
@@ -42,9 +49,12 @@ public class ConfigurationService {
             """;
 
 
-
-
     public ConfigurationModel getConfiguration(){
+        if (configurationModel == null) configurationModel = readConfiguration();
+        return configurationModel;
+    }
+
+    private ConfigurationModel readConfiguration(){
         if(new File(confFileName).exists()){
 
             try (InputStream inputStream = new FileInputStream(confFileName)) {
@@ -67,12 +77,14 @@ public class ConfigurationService {
         ConfigurationModel configurationModel = new ConfigurationModel();
 
         String nodeId = checkNotEmptyValue(properties.getProperty("node_id"),"node_id");
+        String nodeTags = properties.getProperty("node_tags", "");
         String serverUrl = checkNotEmptyValue(properties.getProperty("server_url"),"server_url");
         Integer serverPort = checkNotEmptyIntValue(properties.getProperty("server_port"), "server_port");
         String driverUrl = checkNotEmptyValue(properties.getProperty("driver_url"),"driver_url");
         Integer driverPort = checkNotEmptyIntValue(properties.getProperty("driver_port"),"driver_port");
 
         configurationModel.setNodeId(nodeId);
+        configurationModel.setTags(nodeTags);
         configurationModel.setServerUrl(serverUrl);
         configurationModel.setServerPort(serverPort);
         configurationModel.setDriverUrl(driverUrl);

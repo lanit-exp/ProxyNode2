@@ -1,6 +1,7 @@
 package lanit_exp.proxy_node.services;
 
 import lanit_exp.proxy_node.controllers.WebSocketClient;
+import lanit_exp.proxy_node.models.ConfigurationModel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +14,16 @@ public class MainService {
 
 
     public void startNodeService(){
-        configurationService.getConfiguration();
+       ConfigurationModel configuration = configurationService.getConfiguration();
+
+       if (configuration == null) return;
+
+       webSocketClient.connect(configuration);
+
+       while (true){
+
+       }
+
 
     }
 
