@@ -32,6 +32,7 @@ public class ApiRequest {
     public HttpHeaders getHeaders() {
         HttpHeaders h = new HttpHeaders();
         h.addAll(headers);
+        h.remove("content-length");
         return h;
     }
 }

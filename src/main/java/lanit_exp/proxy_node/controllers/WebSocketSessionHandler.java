@@ -1,5 +1,7 @@
 package lanit_exp.proxy_node.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lanit_exp.proxy_node.models.ApiRequest;
 import lanit_exp.proxy_node.services.APIService;
 import lombok.AllArgsConstructor;
@@ -50,7 +52,7 @@ public class WebSocketSessionHandler implements StompSessionHandler {
 
                     session.send(h, response);
 
-                    log.info("[OUTPUT MES] {}", response);
+                    log.info("[OUTPUT MES] {}", response.substring(0, Math.min(response.length(), 1000)));
 
                 } catch (IllegalArgumentException e) {
                     log.error(e.getMessage());
@@ -59,6 +61,7 @@ public class WebSocketSessionHandler implements StompSessionHandler {
         });
 
     }
+
 
     @Override
     public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
@@ -88,6 +91,10 @@ public class WebSocketSessionHandler implements StompSessionHandler {
 
     @Override
     public void handleFrame(StompHeaders headers, Object payload) {
-        System.out.println("handleFrame");
+        try {
+            log.error("HandleFrame ERROR: {}",  new ObjectMapper().writeValueAsString(headers));
+        } catch (JsonProcessingException e) {
+            log.error("HandleFrame ERROR");
+        }
     }
 }
