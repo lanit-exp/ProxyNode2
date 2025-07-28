@@ -1,5 +1,6 @@
 package lanit_exp.proxy_node.controllers;
 
+import lanit_exp.proxy_node.models.ApiRequest;
 import lanit_exp.proxy_node.services.APIService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,16 +25,17 @@ public class WebSocketSessionHandler implements StompSessionHandler {
         session.subscribe("/queue/to/" + nodeSession, new StompFrameHandler() {
             @Override
             public Type getPayloadType(StompHeaders headers) {
-                return String.class;
+                return ApiRequest.class;
             }
 
             @Override
             public void handleFrame(StompHeaders headers, Object payload) {
 
                 try {
-                    log.info("[INPUT MES ] {}", payload);
 
-                    System.out.println("Получено сообщение: " + payload);
+                    ApiRequest apiRequest = (ApiRequest) payload;
+
+                    log.info("[INPUT MES ] {}", apiRequest);
 
                     StompHeaders h = new StompHeaders();
                     h.setDestination("/node/from");
@@ -44,7 +46,7 @@ public class WebSocketSessionHandler implements StompSessionHandler {
 
                     h.add("request_id", requestId);
 
-                    String response = apiService.proxyMessage((String) payload);
+                    String response = apiService.proxyMessage(apiRequest);
 
                     session.send(h, response);
 
@@ -60,20 +62,28 @@ public class WebSocketSessionHandler implements StompSessionHandler {
 
     @Override
     public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
-        System.out.println("handleException");
-        throw new RuntimeException(exception);
+        StompHeaders h = new StompHeaders();
+        h.setDestination("/node/from");
+
+        String requestId = headers.get("request_id").stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("В сообщении отсутствует обязательный хедер 'request_id'"));
+
+        h.add("request_id", requestId);
+
+        session.send(h, "Ошибка обработки запроса от ProxyHub: " + exception.getMessage());
+
+        log.error("Ошибка обработки запроса от ProxyHub", exception);
     }
 
     @Override
     public void handleTransportError(StompSession session, Throwable exception) {
-        System.out.println(exception.getMessage());
-        System.out.println("handleTransportError");
-        throw new RuntimeException(exception);
+        log.error("Ошибка обработки запроса от ProxyHub", exception);
     }
 
     @Override
     public Type getPayloadType(StompHeaders headers) {
-        return String.class;
+        return Object.class;
     }
 
     @Override

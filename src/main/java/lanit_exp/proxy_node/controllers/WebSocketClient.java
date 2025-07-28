@@ -36,14 +36,4 @@ public class WebSocketClient {
 
     }
 
-
-    public void sendMessage(String message) {
-        if (session != null && session.isConnected()) {
-            session.send("/node/message", message);
-        } else {
-            System.out.println("Session is not connected.");
-        }
-    }
-
-
 }
