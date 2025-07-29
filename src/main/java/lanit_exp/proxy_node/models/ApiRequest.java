@@ -26,7 +26,7 @@ public class ApiRequest {
 
     @Override
     public String toString() {
-        return uri;
+        return "[ %s ]: %s\n%s".formatted(method, uri, body);
     }
 
     public HttpHeaders getHeaders() {
