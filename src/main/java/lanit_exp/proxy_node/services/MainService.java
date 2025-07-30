@@ -26,7 +26,6 @@ public class MainService {
         if (configuration == null) return;
 
         StompSession session = null;
-        webSocketClient.connect(configuration);
 
         while (true) {
 
