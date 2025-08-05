@@ -21,9 +21,7 @@ public class WebSocketSessionHandler implements StompSessionHandler {
     @Override
     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
 
-        String nodeSession = ((DefaultStompSession) session).getConnectHeaders()
-                .getNativeHeader("node_session")
-                .get(0);
+        String nodeSession = connectedHeaders.get("node_session").get(0);
         session.subscribe("/queue/to/" + nodeSession, new StompFrameHandler() {
             @Override
             public Type getPayloadType(StompHeaders headers) {

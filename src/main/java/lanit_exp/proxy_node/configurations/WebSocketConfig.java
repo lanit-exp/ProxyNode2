@@ -20,7 +20,6 @@ public class WebSocketConfig {
         WebSocketClient client = new SockJsClient(List.of(new WebSocketTransport(new StandardWebSocketClient())));
         WebSocketStompClient stompClient = new WebSocketStompClient(client);
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
-//        stompClient.setMessageConverter(new StringMessageConverter());
 
         return stompClient;
     }
