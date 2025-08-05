@@ -161,8 +161,12 @@ public class ConfigurationService {
         try {
             Files.writeString(Paths.get(confFileName), getDefaultConfig());
             printCreateConfFileMessage();
+
+            Thread.sleep(10_000);
         } catch (IOException e) {
             throw new RuntimeException("Не удалось записать дефолтную конфигурацию в файл: " + confFileName,  e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -174,7 +178,7 @@ public class ConfigurationService {
                 
                     ==============================================================================
                         Создан файл '%s' c дефолтной конфигурацией!
-                        Отредактируйте файл, заполнив все параметры, и перезапустите приложение.   
+                        Отредактируйте файл, заполнив все параметры, и перезапустите ProxyNode.   
                     ==============================================================================
                     
                     
