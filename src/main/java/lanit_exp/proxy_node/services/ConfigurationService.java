@@ -22,31 +22,51 @@ public class ConfigurationService {
     private String confFileName;
 
     private static final String DEFAULT_CONFIG = """
-            # Файл конфигурации Proxy Node
-            # Необходимо заполнить все параметры описанные ниже
+            ############################################################################################################
+            
+                # Файл конфигурации Proxy Node
+                # Необходимо заполнить все параметры описанные ниже
+            
+            ############################################################################################################
             
             # Уникальный id ноды, используется для точной идентификации ноды при проксировании запросов
             # Генерируется автоматически при создании файла
+            
                 node_id=%1$s
 
             # Теги ноды, используемы для фильтрации всех запущенных нод.
             # Применяется при запуске не на конкретной ноде,а на любой свободной.
             # Теги указывать через запятую (например: flanium,regress,chrome). (параметр опциональный)
+            
                 node_tags=
 
-            # Адрес сервера Proxy Hub (указать только ip или адрес хоста: 123.456.7.8 или proxyhub.lanit.ru)            
+            ############################################################################################################
+            
+            # Адрес сервера Proxy Hub, указать только ip или адрес хоста (без http/https).
+            # Например: 123.456.7.8 или proxyhub.lanit.ru
+                        
                 server_url=
                 
-            # Номер порта сервера Proxy Hub    
+            # Номер порта сервера Proxy Hub (0 - если порт не нужен)
+                
                 server_port=4448
+                
+            # Поддержка https/wss (значения: true/false)
+                
+                https=true   
 
-            # IP адрес драйвера (желательно запускать Proxy Node там же, где и драйвер)           
+            ############################################################################################################
+            
+            # IP адрес драйвера (желательно запускать Proxy Node там же, где и драйвер)
+                       
                 driver_url=127.0.0.1
                 
-            # Порт драйвера    
+            # Порт драйвера
+                
                 driver_port=9999
                 
-            ##################################     Как подключаться    ##############################################
+            ##################################     Как подключаться    #################################################
+            
             # ProxyHub имеет два режима проксирования:
             
             # 1. Подключение к конкретной ноде по id. Запросы будут проксироваться без учета занятости ноды.
@@ -94,14 +114,16 @@ public class ConfigurationService {
         String nodeId = checkNotEmptyValue(properties.getProperty("node_id"),"node_id");
         String nodeTags = properties.getProperty("node_tags", "");
         String serverUrl = checkNotEmptyValue(properties.getProperty("server_url"),"server_url");
-        Integer serverPort = checkNotEmptyIntValue(properties.getProperty("server_port"), "server_port");
+        Integer serverPort = getIntValue(properties.getProperty("server_port"), "server_port");
+        Boolean https = Boolean.parseBoolean(properties.getProperty("https", "false"));
         String driverUrl = checkNotEmptyValue(properties.getProperty("driver_url"),"driver_url");
-        Integer driverPort = checkNotEmptyIntValue(properties.getProperty("driver_port"),"driver_port");
+        Integer driverPort = getIntValue(properties.getProperty("driver_port"),"driver_port");
 
         configurationModel.setNodeId(nodeId);
         configurationModel.setTags(nodeTags);
         configurationModel.setServerUrl(serverUrl);
         configurationModel.setServerPort(serverPort);
+        configurationModel.setHttps(https);
         configurationModel.setDriverUrl(driverUrl);
         configurationModel.setDriverPort(driverPort);
 
@@ -118,9 +140,9 @@ public class ConfigurationService {
         return value;
     }
 
-    private Integer checkNotEmptyIntValue(String value, String valueName){
+    private Integer getIntValue(String value, String valueName){
 
-        String intValue = checkNotEmptyValue(value, valueName);
+        String intValue = (value == null || value.isEmpty()) ? "0" : value;
 
         try {
             return Integer.parseInt(intValue);

@@ -11,21 +11,25 @@ import java.util.List;
 public class ConfigurationModel {
 
     private String nodeId;
-
     private String tags;
 
     private String serverUrl;
     private Integer serverPort;
+    private Boolean https;
 
     private String driverUrl;
     private Integer driverPort;
 
 
     public String getServerWSUrl() {
-        return "ws://%s:%d/ws".formatted(
-                serverUrl.replaceAll("^[a-z]+://", "")
-                        .replaceAll("/$", ""),
-                serverPort);
+        String protocol = https ? "wss://" : "ws://";
+        String port = serverPort > 0 ? ":" + serverPort : "";
+
+        return protocol
+                + serverUrl.replaceAll("^[a-z]+://", "").replaceAll("/$", "")
+                + port
+                + "/ws";
+
     }
 
     public StompHeaders getHeaders() {
