@@ -7,9 +7,19 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class Application {
 
-    public static void main(String[] args) {
-        SpringApplication.run(Application.class, args)
-                .getBean(MainService.class).startNodeService();
+    public static void main(String[] args) throws InterruptedException {
+
+        try {
+            SpringApplication.run(Application.class, args)
+                    .getBean(MainService.class)
+                    .startNodeService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Thread.sleep(500);
+        System.out.println("\n\n\n     Нажмите Enter, чтобы выйти...");
+        new java.util.Scanner(System.in).nextLine();
     }
 
 }

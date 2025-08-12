@@ -37,20 +37,14 @@ public class WebSocketSessionHandler implements StompSessionHandler {
 
                     log.info("[INPUT MES ] {}", apiRequest);
 
-                    StompHeaders h = new StompHeaders();
-                    h.setDestination("/node/from");
-
-                    String requestId = headers.get("request_id").stream()
-                            .findFirst()
-                            .orElseThrow(() -> new IllegalArgumentException("В сообщении отсутствует обязательный хедер 'request_id'"));
-
-                    h.add("request_id", requestId);
+                    StompHeaders h = getResponseHeaders(headers);
 
                     String response = apiService.proxyMessage(apiRequest);
 
                     session.send(h, response);
 
-                    log.info("[OUTPUT MES] {}", response.substring(0, Math.min(response.length(), 1000)));
+                    log.info("[OUTPUT MES] {}", response.length() > 1000 ?
+                            response.substring(0, 1000) + "...<length: %d>".formatted(response.length()) : response);
 
                 } catch (IllegalArgumentException e) {
                     log.error(e.getMessage());
@@ -63,14 +57,7 @@ public class WebSocketSessionHandler implements StompSessionHandler {
 
     @Override
     public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
-        StompHeaders h = new StompHeaders();
-        h.setDestination("/node/from");
-
-        String requestId = headers.get("request_id").stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("В сообщении отсутствует обязательный хедер 'request_id'"));
-
-        h.add("request_id", requestId);
+        StompHeaders h = getResponseHeaders(headers);
 
         session.send(h, "Ошибка обработки запроса от ProxyHub: " + exception.getMessage());
 
@@ -94,5 +81,20 @@ public class WebSocketSessionHandler implements StompSessionHandler {
         } catch (JsonProcessingException e) {
             log.error("HandleFrame ERROR");
         }
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+
+    private static StompHeaders getResponseHeaders(StompHeaders requestHeaders){
+        StompHeaders result = new StompHeaders();
+        result.setDestination("/node/from");
+
+        String requestId = requestHeaders.get("request_id").stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("В сообщении отсутствует обязательный хедер 'request_id'"));
+
+        result.add("request_id", requestId);
+
+        return result;
     }
 }

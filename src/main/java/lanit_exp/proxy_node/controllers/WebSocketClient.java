@@ -27,12 +27,13 @@ public class WebSocketClient {
                             webSocketSessionHandler)
                     .get();
 
-            log.info("Соединение с сервером ProxyHub установленно");
+            log.info("Соединение с сервером ProxyHub '{}' УСТАНОВЛЕНО", configuration.getServerWSUrl());
 
             return session;
 
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Не удалось установить соединение с сервером ProxyHub", e);
+            throw new RuntimeException("Не удалось установить соединение с сервером ProxyHub: '%s'"
+                    .formatted(configuration.getServerWSUrl()), e);
         }
 
     }
