@@ -46,7 +46,7 @@ public class WebSocketSessionHandler implements StompSessionHandler {
                     log.info("[OUTPUT MES] {}", response.length() > 1000 ?
                             response.substring(0, 1000) + "...<length: %d>".formatted(response.length()) : response);
 
-                } catch (IllegalArgumentException e) {
+                } catch (Exception e) {
                     log.error(e.getMessage());
                 }
             }
