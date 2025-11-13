@@ -10,7 +10,6 @@ public class Driver {
     private final Integer port;
     private final String driverName;
 
-    @Setter
     private String driverSession;
 
     public Driver(String url, Integer port, String driverName) {
@@ -19,4 +18,15 @@ public class Driver {
         this.driverName = driverName;
     }
 
+    public synchronized String getDriverSession() {
+        return driverSession;
+    }
+
+    public synchronized void setDriverSession(String driverSession) {
+        this.driverSession = driverSession;
+    }
+
+    public String getFullUrl(){
+        return "http://%s:%s".formatted(url, port);
+    }
 }

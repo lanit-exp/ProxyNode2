@@ -2,6 +2,7 @@ package lanit_exp.proxy_node.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lanit_exp.proxy_node.helpers.StringHelper;
 import lanit_exp.proxy_node.models.ApiRequest;
 import lanit_exp.proxy_node.services.APIService;
 import lombok.AllArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.messaging.simp.stomp.*;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
+import java.util.List;
 
 @Component
 @AllArgsConstructor
@@ -38,13 +40,13 @@ public class WebSocketSessionHandler implements StompSessionHandler {
                     log.info("[INPUT MES ] {}", apiRequest);
 
                     StompHeaders h = getResponseHeaders(headers);
+                    String driverName = getHeaderByName(headers, "driver_name");
 
-                    String response = apiService.proxyMessage(apiRequest);
+                    String response = apiService.proxyMessage(apiRequest, driverName);
 
                     session.send(h, response);
 
-                    log.info("[OUTPUT MES] {}", response.length() > 1000 ?
-                            response.substring(0, 1000) + "...<length: %d>".formatted(response.length()) : response);
+                    log.info("[OUTPUT MES] {}", StringHelper.trimLargeString(response, 1000));
 
                 } catch (Exception e) {
                     log.error(e.getMessage());
@@ -77,7 +79,7 @@ public class WebSocketSessionHandler implements StompSessionHandler {
     @Override
     public void handleFrame(StompHeaders headers, Object payload) {
         try {
-            log.error("HandleFrame ERROR: {}",  new ObjectMapper().writeValueAsString(headers));
+            log.error("HandleFrame ERROR: {}", new ObjectMapper().writeValueAsString(headers));
         } catch (JsonProcessingException e) {
             log.error("HandleFrame ERROR");
         }
@@ -85,16 +87,24 @@ public class WebSocketSessionHandler implements StompSessionHandler {
 
     //------------------------------------------------------------------------------------------------------------------
 
-    private static StompHeaders getResponseHeaders(StompHeaders requestHeaders){
+    private static StompHeaders getResponseHeaders(StompHeaders requestHeaders) {
         StompHeaders result = new StompHeaders();
         result.setDestination("/node/from");
 
-        String requestId = requestHeaders.get("request_id").stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("В сообщении отсутствует обязательный хедер 'request_id'"));
+        String requestId = getHeaderByName(requestHeaders, "request_id");
+
+        if (requestId == null)
+            throw new IllegalArgumentException("В сообщении отсутствует обязательный хедер 'request_id'");
 
         result.add("request_id", requestId);
 
         return result;
     }
+
+    private static String getHeaderByName(StompHeaders stompHeaders, String headerName) {
+        List<String> strings = stompHeaders.get(headerName);
+        if (strings == null || strings.isEmpty()) return null;
+        return strings.get(0);
+    }
+
 }
