@@ -5,6 +5,7 @@ import lanit_exp.proxy_node.models.ConfigurationModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,7 @@ public class MainService {
 
     private final ConfigurationService configurationService;
     private final WebSocketClient webSocketClient;
+    private final DriverService driverService;
 
     @Value("${node.reconnect.time}")
     private Integer reconnectTime;
@@ -25,17 +27,23 @@ public class MainService {
 
         if (configuration == null) return;
 
+        driverService.setDrivers(configuration.getDrivers());
+
+        String serverWSUrl = configuration.getServerWSUrl();
+        StompHeaders stompHeaders = configuration.getHeaders();
+
         StompSession session = null;
 
         while (true) {
 
             try {
                 if (session == null || !session.isConnected()) {
-                    log.info("Попытка подключения к {}", configuration.getServerWSUrl());
-                    session = webSocketClient.connect(configuration);
+                    log.info("Попытка подключения к {}", serverWSUrl);
+                    session = webSocketClient.connect(serverWSUrl, stompHeaders);
                 }
             } catch (Exception e) {
-                log.error("Не удалось подключиться к ProxyNode! Повторная попытка через {} сек...", reconnectTime);
+                log.error("Не удалось подключиться к ProxyNode: '{}'.", e.getMessage());
+                log.info("Повторная попытка подключения через {} сек...", reconnectTime);
             }
 
             try {

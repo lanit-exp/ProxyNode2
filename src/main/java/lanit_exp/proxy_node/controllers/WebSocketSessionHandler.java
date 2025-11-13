@@ -66,7 +66,7 @@ public class WebSocketSessionHandler implements StompSessionHandler {
 
     @Override
     public void handleTransportError(StompSession session, Throwable exception) {
-        log.error("Ошибка обработки запроса от ProxyHub", exception);
+        log.error("Ошибка обработки запроса от ProxyHub: {}", exception.getMessage());
     }
 
     @Override

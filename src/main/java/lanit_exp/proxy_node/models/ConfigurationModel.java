@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -17,8 +18,7 @@ public class ConfigurationModel {
     private Integer serverPort;
     private Boolean https;
 
-    private String driverUrl;
-    private Integer driverPort;
+    private List<Driver> drivers;
 
 
     public String getServerWSUrl() {
@@ -37,6 +37,10 @@ public class ConfigurationModel {
 
         headers.put("node_id", List.of(nodeId));
         headers.put("node_tags", List.of(tags));
+
+        headers.put("driver_names", List.of(drivers.stream()
+                .map(Driver::getDriverName)
+                .collect(Collectors.joining(","))));
 
         return headers;
     }
