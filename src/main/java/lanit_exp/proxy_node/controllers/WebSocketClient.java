@@ -28,7 +28,7 @@ public class WebSocketClient {
                             webSocketSessionHandler)
                     .get();
 
-            log.info("Соединение с сервером ProxyHub '{}' УСТАНОВЛЕНО", serverWSUrl);
+            log.info("Соединение с сервером ProxyHub '{}' - УСТАНОВЛЕНО", serverWSUrl);
 
             return session;
 

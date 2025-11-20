@@ -46,7 +46,7 @@ public class WebSocketSessionHandler implements StompSessionHandler {
 
                     session.send(h, response);
 
-                    log.info("[OUTPUT MES] {}", StringHelper.trimLargeString(response, 1000));
+                    log.info("[OUTPUT MES] {}", StringHelper.trimLargeString(response, 500));
 
                 } catch (Exception e) {
                     log.error(e.getMessage());

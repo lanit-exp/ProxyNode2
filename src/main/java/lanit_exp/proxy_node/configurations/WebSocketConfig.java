@@ -24,6 +24,7 @@ public class WebSocketConfig {
 
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient(container));
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        stompClient.setInboundMessageSizeLimit(messageSizeLimit);
 
         return stompClient;
     }

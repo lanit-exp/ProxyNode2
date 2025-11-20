@@ -1,6 +1,7 @@
 package lanit_exp.proxy_node.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lanit_exp.proxy_node.helpers.StringHelper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,7 +27,7 @@ public class ApiRequest {
 
     @Override
     public String toString() {
-        return "[ %s ]: %s\n%s".formatted(method, uri, body);
+        return "[ %s ]: %s\n%s".formatted(method, uri, StringHelper.trimLargeString(body, 500));
     }
 
     public HttpHeaders getHeaders() {
