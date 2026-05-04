@@ -1,10 +1,12 @@
 package lanit_exp.proxy_node.helpers;
 
-import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
+import java.util.Properties;
 
 public class FileHelper {
 
@@ -19,55 +21,27 @@ public class FileHelper {
             throw new RuntimeException("Файл '%s' - не является исполняемым.".formatted(filePath));
     }
 
-    public static void runScript(String filePath, Integer timeoutInSec) {
 
-        ProcessBuilder pb = getProcessBuilder(filePath);
-
+    public static void writeStringToFile(String filePath, String data) {
         try {
-            Process process = pb.start();
-            boolean finished = process.waitFor(timeoutInSec, TimeUnit.SECONDS);
-
-            if (!finished) {
-                throw new RuntimeException("Превышено время выполнения скрипта '%s'".formatted(filePath));
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка при выполнении скрипта '%s': '%s'".formatted(filePath, e.getMessage()));
+            Files.writeString(Paths.get(filePath), data);
+        } catch (IOException e) {
+            throw new RuntimeException("Не удалось создать файл '%s': '%s'".formatted(filePath, e.getMessage()));
         }
-
     }
 
-    //------------------------------------------------------------------------------------------------------------------
 
-    private static ProcessBuilder getProcessBuilder(String filePath) {
-        String extension = getFileExtension(filePath);
+    public static Properties readPropertiesFromFile(String filePath) {
+        try (InputStream inputStream = new FileInputStream(filePath)) {
+            Properties properties = new Properties();
+            properties.load(inputStream);
 
-        return switch (extension) {
-            case "bat" -> new ProcessBuilder("cmd.exe", "/c", filePath);
-            case "ps1" -> new ProcessBuilder("powershell.exe",
-                    "-ExecutionPolicy", "Bypass",
-                    "-File", filePath);
+            return properties;
 
-            default -> throw new RuntimeException("Неподдерживаемый тип расширения скрипта '%s'. Поддерживаются только скрипты bat и ps1."
-                    .formatted(extension));
-        };
-    }
-
-    private static String getFileExtension(String filePath) {
-        if (filePath == null) return "";
-
-        File file = new File(filePath);
-        String name = file.getName();
-
-        if(name.isEmpty()) return "";
-
-        int lastDotIndex = name.lastIndexOf('.');
-
-        if (lastDotIndex <= 0 || lastDotIndex == name.length() - 1) {
-            return "";
+        } catch (IOException e) {
+            throw new RuntimeException("Ошибка чтения файла конфигурации '%s': '%s'".formatted(filePath, e.getMessage()));
         }
-
-        return name.substring(lastDotIndex + 1).toLowerCase();
     }
+
 
 }

@@ -4,20 +4,17 @@ import lanit_exp.proxy_node.helpers.CollectionHelper;
 import lanit_exp.proxy_node.helpers.FileHelper;
 import lanit_exp.proxy_node.models.ConfigurationModel;
 import lanit_exp.proxy_node.models.Driver;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+@Slf4j
 public class ConfigurationService {
 
     private ConfigurationModel configurationModel;
@@ -25,141 +22,156 @@ public class ConfigurationService {
     @Value("${node.conf.fileName}")
     private String confFileName;
 
+    @Value("${node.id.fileName}")
+    private String idFileName;
+
     private static final String CREATE_CONFIG_MESSAGE = """
-                 
-                
-                
+            
+            
+            
                     ==============================================================================
                         Создан файл '%s' c дефолтной конфигурацией!
-                        Отредактируйте файл, заполнив все параметры, и перезапустите ProxyNode.   
+                        Отредактируйте файл, заполнив все параметры, и перезапустите ProxyNode.
                     ==============================================================================
-                    
-                    
-                    
+            
+            
+            
+            """;
+
+
+    private static final String DEFAULT_ID = """
+             ############################################################################################################
+            
+            # Уникальный id ноды, используется для точной идентификации ноды при проксировании запросов
+            # Генерируется автоматически при создании файла
+            
+                node_id=%1$s
+            
             """;
 
 
     private static final String DEFAULT_CONFIG = """
             ############################################################################################################
-                        
+            
                 # Файл конфигурации Proxy Node
                 # Необходимо заполнить все параметры описанные ниже
-                        
+            
             #__________________________________  Настройки ноды --------------------------------------------------------
-                        
-            # Уникальный id ноды, используется для точной идентификации ноды при проксировании запросов
-            # Генерируется автоматически при создании файла
-                        
-                node_id=%1$s
-
+            
             # Теги ноды, используемы для фильтрации всех запущенных нод.
             # Применяется при запуске не на конкретной ноде, а на любой свободной.
             # Теги указывать через запятую (например: flanium,regress,chrome). (параметр опциональный)
-                        
+            
                 node_tags=
-
+            
             #__________________________________  Настройки хаба --------------------------------------------------------
-                        
+            
             # Адрес сервера Proxy Hub, указать только ip или адрес хоста (без http/https).
             # Например: 123.456.7.8 или proxyhub.lanit.ru
-                        
+            
                 server_url=
-                
+            
             # Номер порта сервера Proxy Hub (0 - если порт не нужен)
-                
+            
                 server_port=4448
-                
+            
             # Поддержка https/wss (значения: true/false)
-                
-                https=true   
-
+            
+                https=true
+            
             #__________________________________  Настройки драйверов ---------------------------------------------------
-                        
+            
             # driver_url - IP адрес драйвера (желательно запускать Proxy Node там же, где и драйвер)
-                        
+            
             # driver_port - Порт драйвера.
-                        
+            
             # driver_name - Имя драйвера. Используется для проксирования запросов к конкретному драйверу, 
             #               если на ноде зарегистрировано несколько драйверов. 
             #               Если при обращении к ProxyHub не указывать имя драйвера, то используется драйвер d0.
             
             # before_script_path - Путь до исполняемого скрипта, который необходимо запустить перед началом новой сессии драйвера.
             #                      В скрипте можно указать закрытие процессов от предыдущего запуска, перезапуск драйвера, очистку файлов и т.п.
-                            
-                                                  
+            
+            
                 d0.driver_url=127.0.0.1
                 d0.driver_port=9999
                 d0.driver_name=default
                 d0.before_script_path=
-                
+            
                 d1.driver_url=
                 d1.driver_port=
                 d1.driver_name=
                 d1.before_script_path=
-                
+            
                 d2.driver_url=
                 d2.driver_port=
                 d2.driver_name=
                 d2.before_script_path=
-                
+            
                 d3.driver_url=
                 d3.driver_port=
                 d3.driver_name=
                 d3.before_script_path=
-                
+            
                 d4.driver_url=
                 d4.driver_port=
                 d4.driver_name=
                 d4.before_script_path=
-                
-                
+            
+            
             ##################################     Как подключаться    #################################################
-                        
+            
             # ProxyHub имеет два режима проксирования:
-                        
+            
             # 1. id - Подключение к конкретной ноде по id. Запросы будут перенаправляться без учета занятости ноды.
             #    Данный режим рекомендуется использовать для отладочного запуска на локальном компьютере.
             #    Для использования данного режима необходимо в качестве удаленного сервера указать следующий url:
-                        
-            #   https://<server_url>:<server_port>/proxy/id/%1$s
-                        
+            
+            #   https://<server_url>:<server_port>/proxy/id/<node_id from proxy_id.txt>
+            
             # 2. tag - в данном режиме будет происходить запуск на случайной свободной ноде, у которой есть указанный при запуске тег.
             #    Данный режим рекомендуется использовать для удаленного запуска.
             #    Для использования данного режима необходимо в качестве удаленного сервера указать следующий url, содержащий необходимый тег:
-                        
+            
             #   https://<server_url>:<server_port>/proxy/tag/<tag1>
-                        
+            
             #   Для запуска на определенном драйвере необходимо добавить следующие Capabilities:
-                        
+            
             #    {
             #        "proxy_options": {
-            #                          "run_id": "<уникальное имя запуска>",
-            #                          "driver_name": "<driver_name>"
-            #                         }
+            #           "run_id": "<уникальное имя запуска>",
+            #           "driver_name": "<driver_name>"
+            #        }
             #    }
-                        
-                        
+            
+            
             """;
 
 
     public ConfigurationModel getConfiguration() {
-        if (configurationModel == null) configurationModel = readConfiguration();
+        if (configurationModel == null) {
+            String id = readId();
+            ConfigurationModel cm = readConfiguration();
+            cm.setNodeId(id);
+            configurationModel = cm;
+        }
+
         return configurationModel;
     }
 
+    private String readId() {
+        if (!new File(idFileName).exists())
+            writeIdToFile();
+
+        Properties properties = FileHelper.readPropertiesFromFile(idFileName);
+        return checkNotEmptyValue(properties.getProperty("node_id", ""), "node_id", idFileName);
+    }
+
+
     private ConfigurationModel readConfiguration() {
         if (new File(confFileName).exists()) {
-
-            try (InputStream inputStream = new FileInputStream(confFileName)) {
-                Properties properties = new Properties();
-                properties.load(inputStream);
-
-                return getConfModelFromProperties(properties);
-
-            } catch (IOException e) {
-                throw new RuntimeException("Ошибка чтения файла конфигурации '%s': '%s'"
-                        .formatted(confFileName, e.getMessage()));
-            }
+            Properties properties = FileHelper.readPropertiesFromFile(confFileName);
+            return getConfModelFromProperties(properties);
 
         } else {
             writeDefaultConfigToFile();
@@ -170,13 +182,11 @@ public class ConfigurationService {
     private ConfigurationModel getConfModelFromProperties(Properties properties) {
         ConfigurationModel configurationModel = new ConfigurationModel();
 
-        String nodeId = checkNotEmptyValue(properties.getProperty("node_id"), "node_id");
         String nodeTags = properties.getProperty("node_tags", "");
-        String serverUrl = checkNotEmptyValue(properties.getProperty("server_url"), "server_url");
-        Integer serverPort = getIntValue(properties.getProperty("server_port"), "server_port");
+        String serverUrl = checkNotEmptyValue(properties.getProperty("server_url"), "server_url", confFileName);
+        Integer serverPort = getIntValue(properties.getProperty("server_port"), "server_port", confFileName);
         Boolean https = Boolean.parseBoolean(properties.getProperty("https", "false"));
 
-        configurationModel.setNodeId(nodeId);
         configurationModel.setTags(nodeTags);
         configurationModel.setServerUrl(serverUrl);
         configurationModel.setServerPort(serverPort);
@@ -190,17 +200,17 @@ public class ConfigurationService {
 
     //------------------------------------------------------------------------------------------------------------------
 
-    private String checkNotEmptyValue(String value, String valueName) {
+    private String checkNotEmptyValue(String value, String valueName, String filePath) {
 
         if (value == null || value.isEmpty()) {
             throw new RuntimeException("Отсутствует или не заполнено значение параметра '%s' в файле конфигурации '%s'"
-                    .formatted(valueName, confFileName));
+                    .formatted(valueName, filePath));
         }
 
         return value;
     }
 
-    private Integer getIntValue(String value, String valueName) {
+    private Integer getIntValue(String value, String valueName, String filePath) {
 
         String intValue = (value == null || value.isEmpty()) ? "0" : value;
 
@@ -208,23 +218,18 @@ public class ConfigurationService {
             return Integer.parseInt(intValue);
         } catch (NumberFormatException e) {
             throw new RuntimeException("Некорректно заполнено значение параметра '%s' в файле конфигурации '%s': '%s'"
-                    .formatted(valueName, confFileName, e.getMessage()));
+                    .formatted(valueName, filePath, e.getMessage()));
         }
-    }
-
-
-    private String getDefaultConfig() {
-        return DEFAULT_CONFIG.formatted(UUID.randomUUID());
     }
 
     private void writeDefaultConfigToFile() {
-        try {
-            Files.writeString(Paths.get(confFileName), getDefaultConfig());
-            System.out.printf((CREATE_CONFIG_MESSAGE) + "%n", confFileName);
-        } catch (IOException e) {
-            throw new RuntimeException("Не удалось записать дефолтную конфигурацию в файл '%s': '%s'"
-                    .formatted(confFileName, e.getMessage()));
-        }
+        FileHelper.writeStringToFile(confFileName, DEFAULT_CONFIG);
+        System.out.printf((CREATE_CONFIG_MESSAGE) + "%n", confFileName);
+    }
+
+    private void writeIdToFile() {
+        FileHelper.writeStringToFile(idFileName, DEFAULT_ID.formatted(UUID.randomUUID()));
+        log.info("Создан файл " + idFileName);
     }
 
     private List<Driver> getDrivers(Properties properties) {
@@ -275,7 +280,7 @@ public class ConfigurationService {
             throw new RuntimeException("Отсутствует имя драйвера: '%s.driver_name'".formatted(prefix));
 
         try {
-            if (beforeScriptPath != null && !beforeScriptPath.isEmpty()){
+            if (beforeScriptPath != null && !beforeScriptPath.isEmpty()) {
                 FileHelper.checkExistsAndExecutableFile(beforeScriptPath);
             }
         } catch (Exception e) {

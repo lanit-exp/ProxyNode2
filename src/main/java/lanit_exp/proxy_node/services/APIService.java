@@ -2,8 +2,8 @@ package lanit_exp.proxy_node.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lanit_exp.proxy_node.helpers.FileHelper;
 import lanit_exp.proxy_node.helpers.JsonHelper;
+import lanit_exp.proxy_node.helpers.ProcessHelper;
 import lanit_exp.proxy_node.models.ApiRequest;
 import lanit_exp.proxy_node.models.Driver;
 import lombok.RequiredArgsConstructor;
@@ -68,7 +68,7 @@ public class APIService {
         if (driver == null) throw new RuntimeException("У текущей ноды отсутствует драйвер с именем '%s'".formatted(driverName));
 
         if (driver.getBeforeScriptPath() != null && !driver.getBeforeScriptPath().isEmpty()){
-            FileHelper.runScript(driver.getBeforeScriptPath(), beforeScriptTimeout);
+            ProcessHelper.runScript(driver.getBeforeScriptPath(), beforeScriptTimeout);
         }
 
         HttpEntity<String> request = new HttpEntity<>(message.getBody(), message.getHeaders());
