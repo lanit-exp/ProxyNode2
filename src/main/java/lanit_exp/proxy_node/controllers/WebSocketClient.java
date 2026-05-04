@@ -33,8 +33,8 @@ public class WebSocketClient {
             return session;
 
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Не удалось установить соединение с сервером ProxyHub: '%s'"
-                    .formatted(serverWSUrl), e);
+            throw new RuntimeException("Не удалось установить соединение с сервером ProxyHub '%s': '%s'"
+                    .formatted(serverWSUrl, e.getMessage()));
         }
 
     }

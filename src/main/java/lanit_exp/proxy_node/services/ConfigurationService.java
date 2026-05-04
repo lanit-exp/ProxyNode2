@@ -1,6 +1,7 @@
 package lanit_exp.proxy_node.services;
 
 import lanit_exp.proxy_node.helpers.CollectionHelper;
+import lanit_exp.proxy_node.helpers.FileHelper;
 import lanit_exp.proxy_node.models.ConfigurationModel;
 import lanit_exp.proxy_node.models.Driver;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,7 +53,7 @@ public class ConfigurationService {
                 node_id=%1$s
 
             # Теги ноды, используемы для фильтрации всех запущенных нод.
-            # Применяется при запуске не на конкретной ноде,а на любой свободной.
+            # Применяется при запуске не на конкретной ноде, а на любой свободной.
             # Теги указывать через запятую (например: flanium,regress,chrome). (параметр опциональный)
                         
                 node_tags=
@@ -81,27 +82,35 @@ public class ConfigurationService {
             # driver_name - Имя драйвера. Используется для проксирования запросов к конкретному драйверу, 
             #               если на ноде зарегистрировано несколько драйверов. 
             #               Если при обращении к ProxyHub не указывать имя драйвера, то используется драйвер d0.
+            
+            # before_script_path - Путь до исполняемого скрипта, который необходимо запустить перед началом новой сессии драйвера.
+            #                      В скрипте можно указать закрытие процессов от предыдущего запуска, перезапуск драйвера, очистку файлов и т.п.
                             
                                                   
                 d0.driver_url=127.0.0.1
                 d0.driver_port=9999
                 d0.driver_name=default
+                d0.before_script_path=
                 
                 d1.driver_url=
                 d1.driver_port=
                 d1.driver_name=
+                d1.before_script_path=
                 
                 d2.driver_url=
                 d2.driver_port=
                 d2.driver_name=
+                d2.before_script_path=
                 
                 d3.driver_url=
                 d3.driver_port=
                 d3.driver_name=
+                d3.before_script_path=
                 
                 d4.driver_url=
                 d4.driver_port=
                 d4.driver_name=
+                d4.before_script_path=
                 
                 
             ##################################     Как подключаться    #################################################
@@ -148,7 +157,8 @@ public class ConfigurationService {
                 return getConfModelFromProperties(properties);
 
             } catch (IOException e) {
-                throw new RuntimeException("Ошибка чтения файла конфигурации: " + confFileName, e);
+                throw new RuntimeException("Ошибка чтения файла конфигурации '%s': '%s'"
+                        .formatted(confFileName, e.getMessage()));
             }
 
         } else {
@@ -197,8 +207,8 @@ public class ConfigurationService {
         try {
             return Integer.parseInt(intValue);
         } catch (NumberFormatException e) {
-            throw new RuntimeException("Некорректно заполнено значение параметра '%s' в файле конфигурации '%s'"
-                    .formatted(valueName, confFileName), e);
+            throw new RuntimeException("Некорректно заполнено значение параметра '%s' в файле конфигурации '%s': '%s'"
+                    .formatted(valueName, confFileName, e.getMessage()));
         }
     }
 
@@ -212,7 +222,8 @@ public class ConfigurationService {
             Files.writeString(Paths.get(confFileName), getDefaultConfig());
             System.out.printf((CREATE_CONFIG_MESSAGE) + "%n", confFileName);
         } catch (IOException e) {
-            throw new RuntimeException("Не удалось записать дефолтную конфигурацию в файл: " + confFileName, e);
+            throw new RuntimeException("Не удалось записать дефолтную конфигурацию в файл '%s': '%s'"
+                    .formatted(confFileName, e.getMessage()));
         }
     }
 
@@ -245,6 +256,7 @@ public class ConfigurationService {
         String url = properties.getProperty(prefix + ".driver_url");
         String port = properties.getProperty(prefix + ".driver_port");
         String name = properties.getProperty(prefix + ".driver_name");
+        String beforeScriptPath = properties.getProperty(prefix + ".before_script_path");
 
         int portNum;
 
@@ -262,7 +274,15 @@ public class ConfigurationService {
         if (name == null || name.isEmpty())
             throw new RuntimeException("Отсутствует имя драйвера: '%s.driver_name'".formatted(prefix));
 
-        return new Driver(url, portNum, name);
+        try {
+            if (beforeScriptPath != null && !beforeScriptPath.isEmpty()){
+                FileHelper.checkExistsAndExecutableFile(beforeScriptPath);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при обработке скрипта для драйвера '%s': '%s'".formatted(name, e.getMessage()));
+        }
+
+        return new Driver(url, portNum, name, beforeScriptPath);
     }
 
 

@@ -2,11 +2,13 @@ package lanit_exp.proxy_node.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lanit_exp.proxy_node.helpers.FileHelper;
 import lanit_exp.proxy_node.helpers.JsonHelper;
 import lanit_exp.proxy_node.models.ApiRequest;
 import lanit_exp.proxy_node.models.Driver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,9 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 @Slf4j
 public class APIService {
+
+    @Value("${before_script.timeout}")
+    private Integer beforeScriptTimeout;
 
     private final RestTemplate restTemplate;
     private final DriverService driverService;
@@ -61,6 +66,10 @@ public class APIService {
         Driver driver = driverService.getDriverByName(driverName);
 
         if (driver == null) throw new RuntimeException("У текущей ноды отсутствует драйвер с именем '%s'".formatted(driverName));
+
+        if (driver.getBeforeScriptPath() != null && !driver.getBeforeScriptPath().isEmpty()){
+            FileHelper.runScript(driver.getBeforeScriptPath(), beforeScriptTimeout);
+        }
 
         HttpEntity<String> request = new HttpEntity<>(message.getBody(), message.getHeaders());
 
