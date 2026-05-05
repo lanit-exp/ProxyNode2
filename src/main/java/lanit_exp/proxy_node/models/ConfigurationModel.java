@@ -45,4 +45,12 @@ public class ConfigurationModel {
         return headers;
     }
 
+    public void addTags(String tags){
+        if (tags == null || tags.isEmpty()) return;
+
+        if(this.tags == null || this.tags.isEmpty())
+            this.tags = tags;
+        else this.tags = this.tags + "," + tags;
+    }
+
 }

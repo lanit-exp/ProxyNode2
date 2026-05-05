@@ -47,6 +47,14 @@ public class ConfigurationService {
             
                 node_id=%1$s
             
+            
+            # Уникальные теги текущей ноды, объединяются с тегами из proxy_conf.txt.
+            # Используются для фильтрации всех запущенных нод.
+            # Применяется при запуске не на конкретной ноде, а на любой свободной.
+            # Теги указывать через запятую (например: node_1701,file_server,group1). (параметр опциональный)
+            
+                node_tags=
+            
             """;
 
 
@@ -58,7 +66,7 @@ public class ConfigurationService {
             
             #__________________________________  Настройки ноды --------------------------------------------------------
             
-            # Теги ноды, используемы для фильтрации всех запущенных нод.
+            # Теги ноды, используются для фильтрации всех запущенных нод.
             # Применяется при запуске не на конкретной ноде, а на любой свободной.
             # Теги указывать через запятую (например: flanium,regress,chrome). (параметр опциональный)
             
@@ -150,21 +158,25 @@ public class ConfigurationService {
 
     public ConfigurationModel getConfiguration() {
         if (configurationModel == null) {
-            String id = readId();
+            Properties idProperties = readIdProperties();
+
+            String id = checkNotEmptyValue(idProperties.getProperty("node_id", ""), "node_id", idFileName);
+            String tags = idProperties.getProperty("node_tags", "");
+
             ConfigurationModel cm = readConfiguration();
             cm.setNodeId(id);
+            cm.addTags(tags);
+
             configurationModel = cm;
         }
 
         return configurationModel;
     }
 
-    private String readId() {
-        if (!new File(idFileName).exists())
-            writeIdToFile();
+    private Properties readIdProperties() {
+        if (!new File(idFileName).exists()) writeIdToFile();
 
-        Properties properties = FileHelper.readPropertiesFromFile(idFileName);
-        return checkNotEmptyValue(properties.getProperty("node_id", ""), "node_id", idFileName);
+        return FileHelper.readPropertiesFromFile(idFileName);
     }
 
 
