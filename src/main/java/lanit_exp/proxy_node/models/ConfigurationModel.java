@@ -1,5 +1,6 @@
 package lanit_exp.proxy_node.models;
 
+import lanit_exp.proxy_node.helpers.HostHelper;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.messaging.simp.stomp.StompHeaders;
@@ -20,6 +21,9 @@ public class ConfigurationModel {
 
     private List<Driver> drivers;
 
+    private String version;
+    private String description;
+
 
     public String getServerWSUrl() {
         String protocol = https ? "wss://" : "ws://";
@@ -35,20 +39,24 @@ public class ConfigurationModel {
     public StompHeaders getHeaders() {
         StompHeaders headers = new StompHeaders();
 
-        headers.put("node_id", List.of(nodeId));
-        headers.put("node_tags", List.of(tags));
+        headers.set("node_id", nodeId);
+        headers.set("node_tags", tags);
 
-        headers.put("driver_names", List.of(drivers.stream()
+        headers.set("driver_names", drivers.stream()
                 .map(Driver::getDriverName)
-                .collect(Collectors.joining(","))));
+                .collect(Collectors.joining(",")));
+
+        headers.set("node_name", HostHelper.getHostname());
+        headers.set("node_version", version);
+        headers.set("node_description", description);
 
         return headers;
     }
 
-    public void addTags(String tags){
+    public void addTags(String tags) {
         if (tags == null || tags.isEmpty()) return;
 
-        if(this.tags == null || this.tags.isEmpty())
+        if (this.tags == null || this.tags.isEmpty())
             this.tags = tags;
         else this.tags = this.tags + "," + tags;
     }

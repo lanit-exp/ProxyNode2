@@ -55,6 +55,12 @@ public class ConfigurationService {
             
                 node_tags=
             
+            
+            # Описание ноды. Дополнительная информация которая будет отображаться на дашборде в ProxyHub. (параметр опциональный)
+            
+                node_description=
+            
+            
             """;
 
 
@@ -63,6 +69,14 @@ public class ConfigurationService {
             
                 # Файл конфигурации Proxy Node
                 # Необходимо заполнить все параметры описанные ниже
+            
+            #___________________________________________________________________________________________________________
+            
+            # Версия ноды и конфигурации. Необходима для контроля состояния множества нод.
+            # Отображается на дашборде в ProxyHub.
+            
+                node_version=
+            
             
             #__________________________________  Настройки ноды --------------------------------------------------------
             
@@ -135,7 +149,7 @@ public class ConfigurationService {
             #    Данный режим рекомендуется использовать для отладочного запуска на локальном компьютере.
             #    Для использования данного режима необходимо в качестве удаленного сервера указать следующий url:
             
-            #   https://<server_url>:<server_port>/proxy/id/<node_id from proxy_id.txt>
+            #   https://<server_url>:<server_port>/proxy/id/<node_id from 'proxy_id.txt'>
             
             # 2. tag - в данном режиме будет происходить запуск на случайной свободной ноде, у которой есть указанный при запуске тег.
             #    Данный режим рекомендуется использовать для удаленного запуска.
@@ -162,10 +176,12 @@ public class ConfigurationService {
 
             String id = checkNotEmptyValue(idProperties.getProperty("node_id", ""), "node_id", idFileName);
             String tags = idProperties.getProperty("node_tags", "");
+            String description = idProperties.getProperty("node_description", "");
 
             ConfigurationModel cm = readConfiguration();
             cm.setNodeId(id);
             cm.addTags(tags);
+            cm.setDescription(description);
 
             configurationModel = cm;
         }
@@ -198,13 +214,14 @@ public class ConfigurationService {
         String serverUrl = checkNotEmptyValue(properties.getProperty("server_url"), "server_url", confFileName);
         Integer serverPort = getIntValue(properties.getProperty("server_port"), "server_port", confFileName);
         Boolean https = Boolean.parseBoolean(properties.getProperty("https", "false"));
+        String version = properties.getProperty("node_version", "");
 
         configurationModel.setTags(nodeTags);
         configurationModel.setServerUrl(serverUrl);
         configurationModel.setServerPort(serverPort);
         configurationModel.setHttps(https);
-
         configurationModel.setDrivers(getDrivers(properties));
+        configurationModel.setVersion(version);
 
         return configurationModel;
     }

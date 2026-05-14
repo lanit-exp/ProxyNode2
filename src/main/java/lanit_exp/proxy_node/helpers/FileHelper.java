@@ -1,8 +1,7 @@
 package lanit_exp.proxy_node.helpers;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,9 +31,10 @@ public class FileHelper {
 
 
     public static Properties readPropertiesFromFile(String filePath) {
-        try (InputStream inputStream = new FileInputStream(filePath)) {
+        try (Reader reader = new InputStreamReader(new FileInputStream(filePath), StandardCharsets.UTF_8)) {
+
             Properties properties = new Properties();
-            properties.load(inputStream);
+            properties.load(reader);
 
             return properties;
 
