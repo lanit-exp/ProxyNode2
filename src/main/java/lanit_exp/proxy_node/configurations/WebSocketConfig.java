@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
@@ -14,6 +16,8 @@ public class WebSocketConfig {
 
     @Value("${ws.message.size_limit}")
     private Integer messageSizeLimit;
+    @Value("${ws.heartbeat}")
+    private Integer wsHeartBeat;
 
     @Bean
     public WebSocketStompClient webSocketStompClient() {
@@ -25,9 +29,18 @@ public class WebSocketConfig {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient(container));
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
         stompClient.setInboundMessageSizeLimit(messageSizeLimit);
+        stompClient.setTaskScheduler(taskScheduler());
+        stompClient.setDefaultHeartbeat(new long[]{wsHeartBeat, wsHeartBeat});
 
         return stompClient;
     }
 
 
+    private TaskScheduler taskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(4);
+        scheduler.setThreadNamePrefix("ws-heartbeat-");
+        scheduler.initialize();
+        return scheduler;
+    }
 }
